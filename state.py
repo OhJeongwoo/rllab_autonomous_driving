@@ -73,7 +73,7 @@ def vehicle_detector(vehicles:carla.ActorList, scenario: Scenario, origin: carla
 def state_update(state, ego_vehicle: carla.Actor, target_vehicle: carla.Actor, idx: int):
 
         state[idx*6-3 : idx*6-1] = wrt_ego(ego_vehicle.get_transform(), target_vehicle.get_transform().location)[0:2]
-        state[idx*6-1] = target_vehicle.get_transform().rotation.yaw - ego_vehicle.get_transform().rotation.yaw
+        state[idx*6-1] = - target_vehicle.get_transform().rotation.yaw + ego_vehicle.get_transform().rotation.yaw 
         state[idx*6] = norm_calculator(target_vehicle.get_velocity())  # vehicle velocity
         state[idx*6+1] = norm_calculator(target_vehicle.get_acceleration())  # vehicle acceleration
         state[idx*6+2] = target_vehicle.get_angular_velocity().z # vehicle angular velocity
@@ -134,7 +134,7 @@ def get_state(world:carla.World, scenario: Scenario, ego_vehicle: carla.Actor, m
     #left line vehicle state update
 
     lane_direction = preceding_loc.__sub__(ego_vehicle.get_location())
-    rotation_matrix = R.from_euler('z', 90, degrees=True)
+    rotation_matrix = R.from_euler('z', -90, degrees=True)
     to_the_left = np.asarray(rotation_matrix.apply([lane_direction.x, lane_direction.y, lane_direction.z]))
     to_the_left = to_the_left * ego_wp.next(max_distance)[0].lane_width / np.linalg.norm(to_the_left)
 
@@ -143,7 +143,7 @@ def get_state(world:carla.World, scenario: Scenario, ego_vehicle: carla.Actor, m
     
 
     back_lane_direction = following_loc.__sub__(ego_vehicle.get_location())
-    rotation_matrix = R.from_euler('z', -90, degrees=True)
+    rotation_matrix = R.from_euler('z', 90, degrees=True)
     to_the_leftb = np.asarray(rotation_matrix.apply([back_lane_direction.x, back_lane_direction.y, back_lane_direction.z]))
     to_the_leftb = to_the_leftb * ego_wp.previous(max_distance)[0].lane_width / np.linalg.norm(to_the_leftb)
 
@@ -180,14 +180,14 @@ def get_state(world:carla.World, scenario: Scenario, ego_vehicle: carla.Actor, m
 
     #right line vehicle state update
 
-    rotation_matrix = R.from_euler('z', -90, degrees=True)
+    rotation_matrix = R.from_euler('z', 90, degrees=True)
     to_the_right = - to_the_left
     to_the_right = to_the_right * ego_wp.next(max_distance)[0].lane_width / np.linalg.norm(to_the_right)
 
     right_preceding = to_the_right + np.asarray([preceding_loc.x, preceding_loc.y, preceding_loc.z])
     right_preceding_loc = carla.Location(right_preceding[0], right_preceding[1], right_preceding[2])
 
-    rotation_matrix = R.from_euler('z', 90, degrees=True)
+    rotation_matrix = R.from_euler('z', -90, degrees=True)
     to_the_rightb = -to_the_leftb
     to_the_rightb = to_the_rightb * ego_wp.previous(max_distance)[0].lane_width / np.linalg.norm(to_the_rightb)
 
@@ -219,7 +219,5 @@ def get_state(world:carla.World, scenario: Scenario, ego_vehicle: carla.Actor, m
             state[33:35] = wrt_ego(ego_vehicle.get_transform(), right_following_loc)[0:2]
             state[35] = 0
             state[36:39] = state[0:3]
-    print(ego_vehicle.get_location())
-    print(right_preceding_loc)
-    print(left_preceding_loc)
+
     return state
