@@ -17,6 +17,7 @@ from carla_real_traffic_scenarios.reward import RewardType
 from carla_real_traffic_scenarios.scenario import Scenario
 from carla_real_traffic_scenarios.utils.topology import get_lane_id, get_lane_ids
 
+DTOR = math.pi / 180
 def norm_calculator(vector: carla.Vector3D):
     return math.sqrt(vector.x**2 + vector.y**2 + vector.z**2)
 
@@ -74,6 +75,7 @@ def state_update(state, ego_vehicle: carla.Actor, target_vehicle: carla.Actor, i
 
         state[idx*6-3 : idx*6-1] = wrt_ego(ego_vehicle.get_transform(), target_vehicle.get_transform().location)[0:2]
         state[idx*6-1] = - target_vehicle.get_transform().rotation.yaw + ego_vehicle.get_transform().rotation.yaw 
+        state[idx*6-1] *= DTOR
         state[idx*6] = norm_calculator(target_vehicle.get_velocity())  # vehicle velocity
         state[idx*6+1] = norm_calculator(target_vehicle.get_acceleration())  # vehicle acceleration
         state[idx*6+2] = target_vehicle.get_angular_velocity().z # vehicle angular velocity
@@ -220,4 +222,5 @@ def get_state(world:carla.World, scenario: Scenario, ego_vehicle: carla.Actor, m
             state[35] = 0
             state[36:39] = state[0:3]
 
+    
     return state

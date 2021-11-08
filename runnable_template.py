@@ -31,6 +31,12 @@ def parser_args():
     args = parser.parse_args()
     return args
 
+def callback(image, cam_id):
+    print("sensor-%d image: %d" %(cam_id, image.frame))
+    global tmp_image
+    tmp_image = image
+    image.save_to_disk('output/%.6d_%.6d.jpg' % (image.frame, cam_id))
+    print("tmp image: %d" %(tmp_image.frame))
 
 def prepare_ngsim_scenario(client: carla.Client) -> Scenario:
     data_dir = os.environ.get("NGSIM_DIR")
@@ -110,6 +116,13 @@ if __name__ == "__main__":
     spectator = world.get_spectator()
     ego_vehicle = prepare_ego_vehicle(world)
     scenario.reset(ego_vehicle)
+    camera_bp = world.get_blueprint_library().find('sensor.camera.rgb')
+    camera_1 = world.spawn_actor(camera_bp, carla.Transform(carla.Location(0, 0, 20), carla.Rotation(-90,0,0)), attach_to=ego_vehicle)
+    
+    if not os.path.exists("output"):
+        os.mkdir("output")
+    
+    camera_1.listen(lambda image : callback(image,1))
 
     # TODO:load model
     # policy = MLP(state_dim_, action_dim_, hidden_layers_, learning_rate_)
@@ -133,6 +146,7 @@ if __name__ == "__main__":
             # get state
             max_distance = 40.0 
             state = get_state(world, scenario, ego_vehicle, max_distance)
+            print(state)
             # state explanation (numpy, size:39)
             #
             # left lane    ego lane    right lane 
@@ -151,7 +165,7 @@ if __name__ == "__main__":
             # action = policy(state)
             # ego_vehicle.apply_control(carla.VehicleControl(throttle=action[0], steer=action[1]))
 
-            ego_vehicle.apply_control(carla.VehicleControl(throttle=0.5, steer=-0.2))  # for test
+            ego_vehicle.apply_control(carla.VehicleControl(throttle=random.randrange(0,1), steer=random.randrange(-1,1)))  # for test
 
             # TODO: reward - can change on carla-real-traffic-scenario/ngsim/scenario.py
             chauffeur_cmd, reward, done, info = scenario.step(ego_vehicle)
